@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chatbox di sản</title>
+<style>
+  html,body{margin:0;height:100%;font-family:system-ui,"Segoe UI",sans-serif;color:#fff}
+  /* Nền: thay bằng ảnh/canvas/model-viewer của bạn */
+  body{background:linear-gradient(#2f5f98,#f6dcae 60%,#7e786d)}
+  #notes{position:fixed;left:12px;right:12px;bottom:84px;max-width:660px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+  .card{padding:10px 14px;border-radius:14px;background:rgba(10,20,30,.42);
+        backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+        border:1px solid rgba(255,255,255,.25);cursor:pointer;animation:up .5s both}
+  .card b{display:block;color:#e8b04a;font-size:14px;margin-bottom:3px}
+  .card p{margin:0;font-size:13px;line-height:1.55;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+  @keyframes up{from{opacity:0;transform:translateY(10px)}to{opacity:1}}
+  #bar{position:fixed;left:12px;right:12px;bottom:16px;max-width:660px;margin:0 auto;display:flex;gap:8px;
+       padding:8px;border-radius:24px;background:rgba(10,20,30,.4);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+       border:1px solid rgba(255,255,255,.25)}
+  #q{flex:1;min-width:0;background:transparent;border:0;outline:0;color:#fff;font-size:15px;padding:6px 10px}
+  #q::placeholder{color:rgba(255,255,255,.65)}
+  #go{border:0;border-radius:18px;padding:8px 18px;background:#e8b04a;color:#222;font-size:14px;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="notes"></div>
+<div id="bar"><input id="q" placeholder="Hỏi về di sản, lịch sử, tên gọi…" autocomplete="off"><button id="go">Hỏi</button></div>
+
+<script>
+/* ===== 1. KIẾN THỨC CÓ SẴN (chạy được không cần mạng) =====
+   Mỗi mục: từ khóa -> danh sách chú thích {title, content}. Thêm mục mới ở đây. */
+const KB = [
+  { keys: ['sài gòn', 'sai gon', 'tên gọi', 'sông'],
+    notes: [
+      { title: 'Sông Sài Gòn',
+        content: 'Sông Sài Gòn bắt nguồn từ vùng biên giới Việt Nam – Campuchia, chảy qua Bình Phước, Bình Dương rồi vào TP.HCM trước khi hợp với sông Đồng Nai.' },
+      { title: 'Tên gọi "Sài Gòn"',
+        content: 'Nguồn gốc tên gọi chưa có kết luận chắc chắn. Một số nhà nghiên cứu cho rằng nó bắt nguồn từ tiếng Khmer "Prei Kor" (rừng cây gòn); số khác nêu cách đọc từ chữ Hán hoặc từ tên gọi của cộng đồng người Hoa.' }
+    ] },
+  { keys: ['nhà rồng', 'nha rong', 'bến'],
+    notes: [
+      { title: 'Bến Nhà Rồng',
+        content: 'Tòa nhà được xây vào đầu thập niên 1860, nổi bật với hai con rồng chầu hạt ngọc trên nóc. Nay là Bảo tàng Hồ Chí Minh – chi nhánh TP.HCM.' },
+      { title: 'Ngày 5/6/1911',
+        content: 'Từ bến cảng này, anh Nguyễn Tất Thành xuống tàu ra đi tìm đường cứu nước. Đây là lý do nơi này trở thành một di tích lịch sử quan trọng.' }
+    ] }
+];
+
+function localAnswer(q) {
+  q = q.toLowerCase();
+  const hit = KB.find(e => e.keys.some(k => q.includes(k)));
+  return hit ? hit.notes : [{ title: 'Chưa có thông tin', content: 'Mình chưa có nội dung cho câu hỏi này. Bạn thử hỏi về "Sài Gòn" hoặc "Nhà Rồng".' }];
+}
+
+/* ===== 2. (TÙY CHỌN) GỌI AI THẬT =====
+   Thay thân hàm này bằng lời gọi tới API của bạn (qua server của bạn, KHÔNG để API key trong code trang web).
+   Hàm phải trả về mảng [{title, content}]. Nếu để nguyên, chatbox dùng KB ở trên. */
+async function callAI(q) {
+  return null; // ví dụ: const r = await fetch('/api/ask', {method:'POST', body: JSON.stringify({q})}); return (await r.json()).notes;
+}
+
+/* ===== 3. GIAO DIỆN ===== */
+const notes = document.getElementById('notes'), q = document.getElementById('q'), go = document.getElementById('go');
+
+function render(list) {
+  notes.innerHTML = '';
+  list.forEach((n, i) => {
+    const c = document.createElement('div'); c.className = 'card'; c.style.animationDelay = i * .3 + 's';
+    const t = document.createElement('b'); t.textContent = n.title;      // textContent: an toàn, không chèn HTML
+    const p = document.createElement('p'); p.textContent = n.content;
+    c.append(t, p); c.onclick = () => c.remove();                         // bấm để đóng
+    notes.appendChild(c);
+  });
+}
+
+async function ask() {
+  const text = q.value.trim(); if (!text) return;
+  q.value = ''; q.placeholder = 'Đang tìm thông tin…'; go.disabled = true;
+  let list = null;
+  try { list = await callAI(text); } catch (e) { list = null; }
+  render(list || localAnswer(text));
+  q.placeholder = 'Hỏi tiếp về di sản…'; go.disabled = false;
+}
+go.onclick = ask;
+q.onkeydown = e => { if (e.key === 'Enter') ask(); };
+</script>
+</body>
+</html>
