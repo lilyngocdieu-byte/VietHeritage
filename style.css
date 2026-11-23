@@ -528,8 +528,12 @@ body.explore-open .explore-view {
 /* 3. Lưới Kiến trúc */
 .arch-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 14px;
+}
+.horizontal-toc {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
 }
 
 .arch-card {
