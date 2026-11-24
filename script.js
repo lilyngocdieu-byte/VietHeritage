@@ -45,8 +45,25 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       viewer.removeAttribute("src");
     }
-  }
+  }function updateReportView(placeKey) {
+  document.querySelectorAll(".report-wrap").forEach((report) => {
+    report.style.display = report.dataset.report === placeKey ? "block" : "none";
+  });
+}
+placePills.forEach((pill) => {
+  pill.addEventListener("click", () => {
+    currentPlace = pill.dataset.place;
+    if (activeNameEl) {
+      activeNameEl.textContent = pill.textContent.trim();
+    }
+    placePills.forEach((p) => p.classList.remove("active"));
+    pill.classList.add("active");
+    updateReportView(currentPlace);
+  });
+});
 
+// Đồng bộ trạng thái báo cáo khi trang vừa tải xong
+updateReportView(currentPlace);
   function openTab(name) {
     tocBtns.forEach(b => b.classList.toggle("active", b.dataset.tab === name));
     document.querySelectorAll(".tab-panel").forEach(p =>
