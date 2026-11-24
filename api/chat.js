@@ -3,29 +3,29 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: "Chỉ hỗ trợ phương thức POST" });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY2;
   if (!apiKey) {
-    return res.status(500).json({ error: "Chưa cấu hình GEMINI_API_KEY trên Vercel" });
+    return res.status(500).json({ error: "Chưa cấu hình GEMINI_API_KEY2 trên Vercel" });
   }
 
   try {
-    const body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
-    const { message, history = [] } = body;
+    const { message, history = [] } = req.body || {};
     if (!message) {
       return res.status(400).json({ error: "Thiếu nội dung câu hỏi" });
     }
 
+    // Dữ liệu huấn luyện (System Instruction) từ báo cáo của bạn
     const systemPrompt = `
 Bạn là hướng dẫn viên ảo chuyên sâu về di sản TP. Hồ Chí Minh, đặc biệt am hiểu về Bến Nhà Rồng.
 Phong cách trả lời:
 - Luôn trả lời bằng tiếng Việt tự nhiên, sinh động, đầy đủ chi tiết (khoảng 100–200 từ), chia ý rõ ràng bằng gạch đầu dòng khi cần, KHÔNG trả lời quá ngắn hay cụt lủn.
-- Sử dụng chính xác các mốc thời gian và dữ liệu trong tài liệu gốc dưới đây; tuyệt đối không bịa đặt số liệu.
-- Cuối câu trả lời gợi ý nhẹ 1 câu hỏi mở để khuyến khích người xem khám phá tiếp.
+- Ưu tiên sử dụng chính xác các mốc thời gian và dữ liệu trong tài liệu gốc dưới đây; có thể mở rộng thêm bối cảnh lịch sử chuẩn xác nếu người dùng hỏi sâu hơn, nhưng tuyệt đối không bịa đặt số liệu.
+- Cuối câu trả lời có thể gợi ý nhẹ 1 câu hỏi mở để khuyến khích người xem khám phá tiếp.
 
 TÀI LIỆU GỐC VỀ BẾN NHÀ RỒNG:
 1. Tổng quan:
 - Tên gọi & Vị trí: Bến Nhà Rồng (tên chính thức: Bảo tàng Hồ Chí Minh - Chi nhánh TP.HCM) là cụm di tích kiến trúc - bảo tàng bên sông Sài Gòn tại số 1 đường Nguyễn Tất Thành, phường Xóm Chiếu (trước thuộc Quận 4), TP.HCM.
-- Lịch sử thương cảng: Từng là trụ sở thương cảng của hãng vận tải biển Pháp Messageries maritimes từ năm 1864 đến năm 1955.
+- Lịch sử thương cảng: Từng là trụ sở thương cảng của hãng vận tải biển Pháp Messageries maritimes từ năm 1864 đến 1955.
 - Dấu ấn lịch sử: Ghi dấu sự kiện ngày 05/06/1911 khi người thanh niên Nguyễn Tất Thành xuống tàu Amiral Latouche-Tréville làm phụ bếp ra đi tìm đường cứu nước.
 - Giá trị hiện nay: Danh thắng biểu trưng của TP.HCM, địa điểm tham quan văn hóa - lịch sử hàng đầu.
 
@@ -41,13 +41,14 @@ TÀI LIỆU GỐC VỀ BẾN NHÀ RỒNG:
 - Bảo tồn nguyên vẹn: Giữ được phom dáng cổ điển và kết cấu vững chãi bên bờ sông Sài Gòn suốt hơn một thế kỷ.
 `;
 
+    // Ghép lịch sử trò chuyện để AI nhớ ngữ cảnh câu hỏi trước đó
     const contents = [
       ...history.slice(-6),
       { role: "user", parts: [{ text: message }] }
     ];
 
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
       {
         method: "POST",
         headers: {
@@ -59,7 +60,7 @@ TÀI LIỆU GỐC VỀ BẾN NHÀ RỒNG:
           contents,
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: 700
+            maxOutputTokens: 600
           }
         })
       }
