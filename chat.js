@@ -3,9 +3,9 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: "Chỉ hỗ trợ phương thức POST" });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY2;
   if (!apiKey) {
-    return res.status(500).json({ error: "Chưa cấu hình GEMINI_API_KEY trên Vercel" });
+    return res.status(500).json({ error: "Chưa cấu hình GEMINI_API_KEY2 trên Vercel" });
   }
 
   try {
